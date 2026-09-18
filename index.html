@@ -428,7 +428,7 @@
      보여주므로, 파일 없이도 전체 흐름을 테스트할 수 있습니다.
    ================================================================ */
 const GAME_DATA = {
-  version: 5,   // 데이터 구조 버전 — 예전 관리자(admin.html) 저장본과 구조가 다르면 무시하고 이 기본값을 씁니다.
+  version: 6,   // 데이터 구조 버전 — 예전 관리자(admin.html) 저장본과 구조가 다르면 무시하고 이 기본값을 씁니다.
 
   config: {
     /* ---- 에셋 폴더 (파일명만 적으면 확장자에 따라 아래 하위 폴더에서 찾습니다) ----
@@ -464,6 +464,8 @@ const GAME_DATA = {
     id: "starfall_wishes",
     card: { date: "─ 밤하늘 ─", location: "별똥별에 비추는 도비의 약속" },
     bgm: "bgm_starfall.mp3",
+    bgmStartVolume: 0.10,
+    bgmPeakVolume: 0.22,
     wishes: [
       "무조건 엥주편 들어주기",
       "안아 달라고 할 때 안아주기",
@@ -506,7 +508,10 @@ const GAME_DATA = {
       date: "2024.12.28",
       location: "문래 아카이테판 — 첫 만남",
       background: "mullae",
-      bgm: "bgm_round1_mullae.mp3",
+      bgm: "bgm_round1_akai.mp3",          // 아카이테판: 썸 탈거야
+      bgmVolume: 0.26,
+      guroBgm: "bgm_round1_gudi.mp3",      // 구디: 우주를 줄게
+      guroBgmVolume: 0.24,
       interactions: [
         { id: "door_enter", target: "OBJ_DOOR", action: "enter_store", phase: "prelude",
           hint: "매장 밖에서 안을 살피는 도비... 문을 눌러 열어주세요!" },
@@ -548,7 +553,9 @@ const GAME_DATA = {
       date: "2025.10.15",
       location: "탄중아루 해변",
       background: "beach",
-      bgm: "bgm_round2_sunset.mp3",
+      bgm: null,                            // 탄중아루 입장~낚시까지는 의도적으로 무음
+      eventBgm: "bgm_round2_sunset.mp3",    // Until I Found You — 반지가 올라오는 순간 시작
+      eventBgmVolume: 0.12,
       interactions: [
         /* 순서: ★ 파기 → 테이블 → 엥주 착석 → 낚싯대 안내 → 낚시 → 반지 → 도비가 엥주에게 → 3D 프로포즈 → 실제 영상 */
         { id: "sand_crack", target: "OBJ_STARMARK", action: "dig_table", before: "frame_star",
@@ -579,7 +586,9 @@ const GAME_DATA = {
       date: "현재",
       location: "우리의 방: 엥주의 생일",
       background: "room",
-      bgm: "bgm_final_propose.mp3",         // 입장 BGM · 촛불 의식 중엔 생일 노래, 끝나면 다시 이 곡
+      bgm: null,                            // 생일방 입장~영상편지까지는 최종곡을 아껴둠
+      finalBgm: "bgm_final_propose.mp3",    // 다행이다 — 영상편지 종료 후 사진 소용돌이부터 시작
+      finalBgmVolume: 0.08,
       interactions: [
         { id: "candle",  target: "OBJ_CAKE", action: "blow_candle",
           hint: "촛불을 탭해서 후~ 하고 꺼주세요!",
@@ -607,6 +616,7 @@ const GAME_DATA = {
       visit: 1,
       card: { date: "─ 추억의 정원 ─", location: "우리가 연인이 되어가던 시간" },
       bgm: "bgm_montage_fast.mp3",
+      bgmVolume: 0.32,
       groups: [
         { title: "우리가 연인이 된 겨울", mood: "warm",
           closing: "그녀에게 점점 빠져 들어갔다.",
@@ -652,6 +662,7 @@ const GAME_DATA = {
       visit: 2,                          // 같은 추억 나무를 다시 방문 (빛·장식이 더 풍성해짐)
       card: { date: "─ 추억의 정원 ─", location: "우리가 가족이 되어가던 시간" },
       bgm: "bgm_montage_future.mp3",
+      bgmVolume: 0.32,
       groups: [
         { title: "프로포즈 이후에도 우리답게", mood: "warm",
           closing: "프로포즈를 한 뒤에도 우리는 여전히 우리답게 웃고, 먹고, 데이트했다.",
@@ -808,32 +819,72 @@ function initAudio(){
     a.load();
   }
 }
-/* 오디오 볼륨 페이드 (크로스페이드용) */
+/* 오디오 볼륨 페이드 / 장면별 BGM 연출 */
+bgmEl.file = null;
+bgmEl.baseVolume = .45;   // 대사 덕킹 후 돌아올 기준 볼륨
+
 function fadeAudio(a, to, ms, then){
-  if(!a){ if(then) then(); return; }
-  const from = a.volume, t0 = performance.now();
-  (function step(){
-    const k = Math.min(1, (performance.now()-t0)/ms);
-    a.volume = Math.min(1, Math.max(0, from + (to-from)*k));
-    if(k < 1) requestAnimationFrame(step);
-    else if(then) then();
-  })();
+  return new Promise(resolve=>{
+    if(!a){ if(then) then(); resolve(); return; }
+    const from = a.volume, t0 = performance.now();
+    const dur = Math.max(1, ms||1);
+    (function step(){
+      const k = Math.min(1, (performance.now()-t0)/dur);
+      a.volume = Math.min(1, Math.max(0, from + (to-from)*k));
+      if(k < 1) requestAnimationFrame(step);
+      else{ if(then) then(); resolve(); }
+    })();
+  });
 }
-function playBGM(file){
-  // 기존 곡은 서서히 사라지고, 새 곡은 서서히 커짐 (크로스페이드)
-  const old = bgmEl.cur; bgmEl.cur = null;
-  if(old) fadeAudio(old, 0, 950, ()=>old.pause());
-  if(!file) return;
+/* opt: volume / fadeMs / crossfadeMs / loop
+   장면 전환은 짧게, 감정 장면은 길게. */
+function playBGM(file, opt){
+  opt=opt||{};
+  const volume = opt.volume!=null ? opt.volume : .45;
+  const fadeMs = opt.fadeMs!=null ? opt.fadeMs : 950;
+  const crossfadeMs = opt.crossfadeMs!=null ? opt.crossfadeMs : fadeMs;
+
+  // 같은 곡이면 재시작하지 않고 목표 볼륨만 조절
+  if(file && bgmEl.cur && bgmEl.file===file){
+    bgmEl.baseVolume=volume;
+    fadeAudio(bgmEl.cur, volume, fadeMs);
+    return bgmEl.cur;
+  }
+
+  const old = bgmEl.cur;
+  bgmEl.cur = null; bgmEl.file = null;
+  if(old) fadeAudio(old, 0, crossfadeMs, ()=>old.pause());
+  if(!file) return null;
+
   const a = new Audio(url(file));
-  a.loop = true; a.volume = 0;
+  a.loop = opt.loop!==false;
+  a.volume = 0;
   a.addEventListener("error", ()=>{});
   a.play().catch(()=>{});
-  fadeAudio(a, 0.45, 950);
   bgmEl.cur = a;
+  bgmEl.file = file;
+  bgmEl.baseVolume = volume;
+  fadeAudio(a, volume, fadeMs);
+  return a;
 }
-function stopBGM(){
-  const old = bgmEl.cur; bgmEl.cur = null;
-  if(old) fadeAudio(old, 0, 750, ()=>old.pause());
+function setBGMVolume(to, ms, remember){
+  if(remember!==false) bgmEl.baseVolume=to;
+  if(!bgmEl.cur) return Promise.resolve();
+  return fadeAudio(bgmEl.cur, to, ms==null?500:ms);
+}
+function duckBGM(mult, ms){
+  if(!bgmEl.cur) return Promise.resolve();
+  return fadeAudio(bgmEl.cur, bgmEl.baseVolume*(mult==null ? .60 : mult), ms==null?280:ms);
+}
+function restoreBGM(ms){
+  if(!bgmEl.cur) return Promise.resolve();
+  return fadeAudio(bgmEl.cur, bgmEl.baseVolume, ms==null?480:ms);
+}
+function stopBGM(ms){
+  const old = bgmEl.cur;
+  bgmEl.cur = null; bgmEl.file = null;
+  if(old) return fadeAudio(old, 0, ms==null?750:ms, ()=>old.pause());
+  return Promise.resolve();
 }
 
 /* ---- 생일 축하 노래 (파일이 없으면 내장 멜로디로 자동 대체) ---- */
@@ -2572,11 +2623,17 @@ dlgBox.addEventListener("pointerup", e=>{
   if(dlgResolver){ const r=dlgResolver; dlgResolver=null; sfx("click"); r(); }
 });
 async function playDialogue(lines){
-  for(const l of lines){
-    if(l.fx && ACTIONS[l.fx]) await ACTIONS[l.fx](l);          // 대사 직전 연출 (카메라·표정)
-    await showLine(l.speaker, l.line);
+  // 대사가 시작되면 음악을 짧게 낮추고, 대사가 끝나면 원래 장면 볼륨으로 복귀
+  await duckBGM(.60, 260);
+  try{
+    for(const l of lines){
+      if(l.fx && ACTIONS[l.fx]) await ACTIONS[l.fx](l);          // 대사 직전 연출 (카메라·표정)
+      await showLine(l.speaker, l.line);
+    }
+  }finally{
+    dlgBox.classList.add("hidden");
+    await restoreBGM(420);
   }
-  dlgBox.classList.add("hidden");
 }
 
 /* ---------------- UI: 힌트 ---------------- */
@@ -2815,7 +2872,7 @@ function photoViewer(files, opt){
 async function runMontage(m){
   let tree;
   await sceneTransition(()=>{ tree=buildOrchard(m.visit||1); applyCustomModels("orchard"); });
-  playBGM(m.bgm);
+  playBGM(m.bgm, {volume:m.bgmVolume!=null?m.bgmVolume:.32, fadeMs:850, crossfadeMs:750});
   await showIntro(m.card||{date:"─ 추억의 정원 ─", location:m.title||"우리의 이야기"});
   if(m.visit>=2) await lightTree(tree, .35, 600);        // 두 번째 방문: 이미 켜져 있는 불빛
   const groups = m.groups||[];
@@ -2960,17 +3017,25 @@ function buildStarfall(){
   orbitLookFrom(new THREE.Vector3(0,1.6,6.5), new THREE.Vector3(0,2.4,-8.0));
 }
 async function runStarfall(sf){
+  // 직전 몽타주 음악을 먼저 내려놓고, 첫 별똥별이 실제로 떨어질 때 새 음악을 시작
+  stopBGM(650);
   await sceneTransition(()=>{ buildStarfall(); applyCustomModels("starfall"); });
-  playBGM(sf.bgm);
   await showIntro(sf.card||{date:"─ 밤하늘 ─", location: sf.title||"별똥별에 비추는 도비의 약속"});
   const wishes = sf.wishes||[];
-  let got=0, active=false;
+  let got=0, active=false, starBgmStarted=false;
   const wishEl=$("wish");
   const updateHint=()=>hint(`✨ 반짝이는 곳을 주목! 별똥별이 지나갈 때 탭 ( ${got} / ${wishes.length} )`);
   updateHint();
   minigameTap = ()=>{
     if(!active){ tone(220,.08,"sine",.03); return; }
     active=false; got++;
+    // 소원이 하나씩 쌓일수록 아주 조금씩 음악도 따뜻하게 올라감
+    if(starBgmStarted){
+      const startV=sf.bgmStartVolume!=null?sf.bgmStartVolume:.10;
+      const peakV=sf.bgmPeakVolume!=null?sf.bgmPeakVolume:.22;
+      const v=startV + (peakV-startV)*(got/Math.max(1,wishes.length));
+      setBGMVolume(v, 650, true);
+    }
     tone(880,.5,"sine",.06,1760);
     wishEl.textContent = "★ " + wishes[got-1];
     wishEl.classList.add("show");
@@ -3001,7 +3066,11 @@ async function runStarfall(sf){
       cue.material.opacity = .5 + Math.sin(k*Math.PI*6)*.5;
     }, t=>t);
     scene.remove(cue);
-    // ── 별똥별 낙하 (1.65초) — 크고 밝은 머리 + 긴 꼬리 ──
+    // ── 별똥별 낙하 (1.65초) — 첫 별이 실제로 움직이는 순간 BGM 첫 음 ──
+    if(!starBgmStarted){
+      starBgmStarted=true;
+      playBGM(sf.bgm, {volume:sf.bgmStartVolume!=null?sf.bgmStartVolume:.10, fadeMs:900, crossfadeMs:500});
+    }
     tone(1320,.35,"sine",.05,1980);
     const head=new THREE.Sprite(new THREE.SpriteMaterial({map:TEX_GLOW, transparent:true, depthWrite:false}));
     head.scale.setScalar(2.6); head.position.copy(from); scene.add(head);
@@ -3369,6 +3438,8 @@ const ACTIONS = {
 
   /* ■ R1-2: 구로디지털단지역 중앙차로로 장소 전환 — 역 사인 클로즈업 → 중앙차로에 선 두 사람 투샷 */
   async goto_guro(){
+    // 아카이테판 → 구디: 두 곡이 오래 겹치지 않도록 약 0.7초의 짧은 크로스페이드
+    if(curEp && curEp.guroBgm) playBGM(curEp.guroBgm, {volume:curEp.guroBgmVolume!=null?curEp.guroBgmVolume:.24, fadeMs:700, crossfadeMs:700});
     await sceneTransition(()=>{ buildGuro(); applyCustomModels("guro"); });
     await wait(1300);                                                   // 사인 클로즈업 한 박자
     await camTween({ theta:-Math.PI*.42, phi:Math.PI/2.45, radius:5.4, tx:-.1, ty:.95, tz:.3 }, 2200);   // 두 사람 투샷 (보도 쪽에서, 버스차로가 뒤로 보임)
@@ -3525,8 +3596,9 @@ const ACTIONS = {
       ringBox.add(rb,ring,gem);
       ringBox.position.copy(bobber.position); scene.add(ringBox);
       interactives.OBJ_RING = ringBox;
-      // 물에서 올라옴 — 카메라가 반지를 따라 위로 틸트하며 클로즈업
+      // 물에서 올라옴 — 이 중요한 순간에만 Until I Found You가 처음 들어옴
       const up = bobber.position.clone().add(new THREE.Vector3(0,1.5,0));
+      if(curEp && curEp.eventBgm) playBGM(curEp.eventBgm, {volume:curEp.eventBgmVolume!=null?curEp.eventBgmVolume:.12, fadeMs:900, crossfadeMs:500});
       burst(bobber.position.clone(), dotTexture("#9ec8ff"), 10, 1.4, .9);
       camLookTween(new THREE.Vector3(up.x+1.3, up.y+.6, up.z+2.2), up.clone().add(new THREE.Vector3(0,-.1,0)), 1300);
       await tweenP(1300, k=>{ ringBox.position.y = bobber.position.y + 1.5*Math.sin(k*Math.PI/2); ringBox.rotation.y = k*Math.PI*2; });
@@ -3553,6 +3625,8 @@ const ACTIONS = {
   /* ■ R2-D: 풀백(도비 + 테이블의 엥주 한 프레임) → 반지를 들고 엥주에게 걸어감(옆에서 팔로우) → 테이블 앞 미디엄 클로즈업 */
   async proposal_walk(){
     const table = interactives.OBJ_TABLE, tp=table.position;
+    // 반지를 들고 엥주에게 걸어갈수록 음악이 한 단계 올라감
+    if(bgmEl.cur) setBGMVolume(.22, 1200, true);
     await camTween({ theta:Math.PI*.32, phi:Math.PI/3.0, radius:wide(8.6), tx:0.2, ty:.8, tz:0.9 }, 1500);
     await wait(300);
     const P=charDobby.userData.parts;
@@ -3604,8 +3678,12 @@ const ACTIONS = {
     burst(tp.clone().add(new THREE.Vector3(0,1.5,0)), TEX_HEART, 12, 1.2, 1.6);
     await wait(900);
     const file = D.videos && D.videos.proposal;
+    // 실제 영상의 현장음을 살리기 위해 BGM은 거의 들리지 않을 정도로 잠깐 낮춤
+    await setBGMVolume(.03, 420, false);
     await playVideo({ file, fullscreen:true, skippable:true,
                       missingTitle:"프로포즈 영상 자리예요 🎬", missingNote:"이 자리에서 실제 프로포즈 영상이 재생됩니다." });
+    bgmEl.baseVolume=.18;
+    await restoreBGM(650);
     burst(tp.clone().add(new THREE.Vector3(0,1.5,0)), TEX_HEART, 8, 1.0, 1.6);
     await wait(700);
     // 반지 상자는 테이블 위에 놓임 (같은 오브젝트), 도비는 팔을 내림
@@ -3655,8 +3733,8 @@ const ACTIONS = {
     await tweenP(1000, k=>{ lights.forEach(l=>{ l.intensity = l.userData.baseI*(.12+.88*k); }); });
     burst(new THREE.Vector3(0,2.2,0), TEX_HEART, 12, 1.5, 1.8);
     setExpression(charEngju,"happy"); setExpression(charDobby,"happy");
-    playBGM(curEp ? curEp.bgm : null);
-    await wait(300);
+    // 여기서는 최종 프로포즈 곡을 아직 시작하지 않는다. 촛불 뒤 짧은 정적을 남김.
+    await wait(900);
   },
 
   /* ■ R3-B: 선물상자 → 하트 → 영상편지 → 사진 소용돌이 → 한 점으로 응축 → 섬광 → 하트 콜라주(+마지막 편지) */
@@ -3670,6 +3748,9 @@ const ACTIONS = {
     burst(gp, TEX_SPARK, 12, 1.6, 1.6);
     await wait(800);
     if(D.videoLetter && D.videoLetter.playAt==="gift_open") await playVideoLetter();
+    // 영상편지의 목소리가 끝난 뒤 한 박자 정적 → 다행이다를 아주 작게 시작
+    await wait(850);
+    if(curEp && curEp.finalBgm) playBGM(curEp.finalBgm, {volume:curEp.finalBgmVolume!=null?curEp.finalBgmVolume:.08, fadeMs:1200, crossfadeMs:500});
     // 지금까지 함께 본 모든 사진 (중복 제거)
     const seen={}, swirlFiles=[];
     album.forEach(p=>{ if(p.file && !seen[p.file]){ seen[p.file]=1; swirlFiles.push(p); } });
@@ -3690,6 +3771,8 @@ const ACTIONS = {
       });
     }
     await wait(300);
+    // 사진이 소용돌이치며 감정이 천천히 올라감
+    if(bgmEl.cur) setBGMVolume(.16, 3600, true);
     await tweenP(4200, k=>{
       planes.forEach(p=>{
         const r = .6 + k*2.0, a = p.phase + k*Math.PI*3;
@@ -3712,6 +3795,8 @@ const ACTIONS = {
     burst(core, TEX_HEART, 18, 1.8, 2);
     await wait(500);
     await showHeartCollage(swirlFiles.slice(0, 14), { letter: curEp && curEp.finalLetter, label: curEp && curEp.collageLabel });
+    // 편지/사진 감상이 끝난 뒤 주민권·엔딩 크레딧은 같은 곡의 여운으로 조금 더 올려 이어감
+    if(bgmEl.cur) await setBGMVolume(.22, 900, true);
   }
 };
 let minigameTap = null;
@@ -3806,7 +3891,8 @@ async function runInts(list){
 async function runEpisode(ep){
   curEp = ep;
   await sceneTransition(()=>{ (BUILDERS[ep.background] || buildRoom)(); applyCustomModels(ep.background); });
-  playBGM(ep.bgm);
+  if(ep.bgm) playBGM(ep.bgm, {volume:ep.bgmVolume!=null?ep.bgmVolume:.30, fadeMs:850, crossfadeMs:750});
+  else stopBGM(650);
   const ints = ep.interactions || [];
   const preludes = ints.filter(i => i.phase === "prelude");
   if(ep.background==="mullae") await mullaeOpening();       // 창문 클로즈업 → 도비 등장
@@ -3831,6 +3917,7 @@ async function runEpisode(ep){
     // 피날레: 평생 주민권 → 엔딩 크레딧 → 마지막 문구 (BGM 유지)
     if(D.certificate && D.certificate.title) await showCertificate(D.certificate);
     if(D.credits && D.credits.length) await runCredits(D.credits);
+    if(bgmEl.cur) await setBGMVolume(.25, 700, true);
     $("notice-main").textContent = ep.systemNotice;
     $("notice-sub").textContent = "— 우리의 진짜 이야기는 지금부터 —";
     $("final-notice").classList.remove("hidden");
