@@ -807,6 +807,10 @@ function loadSavedData(){
 let actx = null;
 const bgmEl = { cur:null };
 const sfxFiles = {};
+// 첫 에피소드 BGM은 Story Start 클릭 순간 무음으로 미리 재생해 브라우저의
+// 자동재생 제한을 확실히 해제한다. (타이틀 음악은 그대로 들림)
+let primedBGM = null, primedBGMFile = null;
+let pendingBGMRetry = null;
 function initAudio(){
   if(actx) return;
   try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
@@ -836,6 +840,32 @@ function fadeAudio(a, to, ms, then){
     })();
   });
 }
+function retryPlayOnGesture(a, file){
+  if(pendingBGMRetry){
+    removeEventListener("pointerdown", pendingBGMRetry);
+    pendingBGMRetry=null;
+  }
+  const retry=()=>{
+    pendingBGMRetry=null;
+    const p=a.play();
+    if(p && p.catch) p.catch(()=>{});
+  };
+  pendingBGMRetry=retry;
+  addEventListener("pointerdown", retry, {once:true});
+  console.warn("[E&D] BGM 재생이 브라우저 정책으로 보류됨. 다음 탭에서 재시도:", file);
+}
+function primeBGM(file){
+  if(!file) return;
+  if(primedBGM){ try{ primedBGM.pause(); }catch(e){} }
+  const a=new Audio(url(file));
+  a.preload="auto"; a.loop=true; a.volume=0;
+  a.addEventListener("error", ()=>console.warn("[E&D] BGM 파일을 찾지 못함:", url(file)), {once:true});
+  // 반드시 사용자 클릭 핸들러 안에서 호출됨
+  const p=a.play();
+  if(p && p.catch) p.catch(()=>retryPlayOnGesture(a,file));
+  primedBGM=a; primedBGMFile=file;
+}
+
 /* opt: volume / fadeMs / crossfadeMs / loop
    장면 전환은 짧게, 감정 장면은 길게. */
 function playBGM(file, opt){
@@ -856,11 +886,20 @@ function playBGM(file, opt){
   if(old) fadeAudio(old, 0, crossfadeMs, ()=>old.pause());
   if(!file) return null;
 
-  const a = new Audio(url(file));
+  let a;
+  if(primedBGM && primedBGMFile===file){
+    a=primedBGM; primedBGM=null; primedBGMFile=null;
+    try{ a.currentTime=0; }catch(e){}
+  }else{
+    a = new Audio(url(file));
+  }
   a.loop = opt.loop!==false;
   a.volume = 0;
-  a.addEventListener("error", ()=>{});
-  a.play().catch(()=>{});
+  a.addEventListener("error", ()=>console.warn("[E&D] BGM 파일을 찾지 못함:", url(file)), {once:true});
+  if(a.paused){
+    const p=a.play();
+    if(p && p.catch) p.catch(()=>retryPlayOnGesture(a,file));
+  }
   bgmEl.cur = a;
   bgmEl.file = file;
   bgmEl.baseVolume = volume;
@@ -4034,6 +4073,10 @@ async function boot(){
     initAudio();
     sfx("click");
     if(!titleBgmOn && CFG.titleBgm){ titleBgmOn=true; playBGM(CFG.titleBgm); }
+    // 이 클릭(사용자 제스처) 안에서 아카이 BGM을 0볼륨으로 미리 실행해 둔다.
+    // 실제 아카이 장면 진입 시 currentTime=0으로 되감고 0.85초 페이드인한다.
+    const firstEpForAudio = D.episodes.find(e => e.id === D.flow[0]);
+    if(firstEpForAudio && firstEpForAudio.bgm) primeBGM(firstEpForAudio.bgm);
     $("title-screen").classList.add("playing");   // UI 페이드아웃 → 약 3초 줌인 → '2024.12.28 / 우리의 첫 번째 만남' 카드
     await wait(4900);
     $("fader").style.opacity = 1; await wait(850);
