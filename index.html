@@ -2,7 +2,12 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- 홈 화면에 추가해서 열면 주소창 없이 앱처럼 꽉 찬 화면으로 실행 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="엥주 × 도비">
 <title>엥주 × 도비 — 우리의 러브스토리</title>
 <style>
   /* ============ 글로벌 톤앤매너: 동물의 숲 스타일 (GDD 2.1) ============ */
@@ -3296,7 +3301,8 @@ function playVideo(opt){
     fsBtn.style.display = "none";
     let done=false;
     const finish=()=>{ if(done)return; done=true;
-      if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+      // 영상만 전체화면이었을 때만 해제 (게임 전체 전체화면은 유지)
+      if(document.fullscreenElement && document.fullscreenElement!==document.documentElement) document.exitFullscreen().catch(()=>{});
       const v=frame.querySelector("video"); if(v) v.pause();
       if(opt.fullscreen){                                  // scale 1→0.88 + 페이드아웃으로 3D 장면에 자연스럽게 복귀
         ov.classList.add("vl-out");
@@ -4076,6 +4082,14 @@ async function boot(){
 
   $("btn-start").addEventListener("click", async ()=>{
     if(titleStarted) return; titleStarted=true;
+    // 시작 버튼을 누르는 순간 화면 전체화면 (PC·안드로이드. 아이폰은 '홈 화면에 추가'로 실행)
+    try{
+      const de=document.documentElement;
+      if(!document.fullscreenElement){
+        if(de.requestFullscreen) de.requestFullscreen({navigationUI:"hide"}).catch(()=>{});
+        else if(de.webkitRequestFullscreen) de.webkitRequestFullscreen();
+      }
+    }catch(e){}
     initAudio();
     sfx("click");
     if(!titleBgmOn && CFG.titleBgm){ titleBgmOn=true; playBGM(CFG.titleBgm); }
