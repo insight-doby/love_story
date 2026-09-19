@@ -104,6 +104,11 @@
   .bd-closing{margin-top:10px;min-height:1.6em;color:#FFF3D6;font-size:clamp(15px,4.2vw,19px);text-align:center;max-width:86vw;line-height:1.55;
     opacity:0;transition:opacity .4s ease;}
   .bd-closing.show{opacity:1;}
+  /* 마무리 문장이 사진 뒤에 가려지지 않도록 항상 사진보다 위에, 반투명 배경으로 표시 */
+  .bd-closing{position:relative;z-index:5;margin-top:22px;padding:8px 18px;border-radius:14px;background:rgba(30,26,22,.72);}
+  .bd-closing:empty{background:none;padding:0;}
+  .bd-tip,#btn-bd-done{position:relative;z-index:5;}
+  .bd-title{position:relative;z-index:5;margin-bottom:24px;}
   .bd-tip{color:rgba(255,243,214,.55);font-size:12px;margin-top:8px;}
   #btn-bd-done{margin-top:10px;}
 
@@ -302,6 +307,7 @@
     #btn-start.ti-start{top:84%;min-width:230px;height:58px;font-size:16px;}
     #title-screen .ti-hint{display:none;}
   }
+  .bd-closing,.hcv-cap2,.dlg-body{white-space:pre-line;}   /* 문구 속 \n 줄바꿈 표시 */
 </style>
 </head>
 <body>
@@ -576,7 +582,7 @@ const GAME_DATA = {
       epilogue: { narration: [
         "계획대로 된 건 많지 않았지만,",
         "그날의 마음만큼은 진심이었다.",
-        "그리고 그 마음을 받아줘서 정말 고마웠다."
+        "그리고 그 마음을 받아준 엥주에게 매우 고마웠다."
       ]}
     },
 
@@ -600,7 +606,7 @@ const GAME_DATA = {
       ],
       /* 영상편지 → 사진 소용돌이 → 하트 콜라주 위에서 읽는 마지막 편지 */
       finalLetter: [
-        { speaker: "도비", line: "엥주야, 생일 정말 진심으로 축하해. 그리고 나와 함께 가주는 이 모든 시간들이 나에겐 최고의 기적이야." },
+        { speaker: "도비", line: "엥주야, 생일 정말 진심으로 축하해. \n그리고 나와 함께 가주는 이 모든 시간들이 나에겐 최고의 기적이야." },
         { speaker: "도비", line: "내가 인생에 흔들릴 때마다 나를 든든하게 잡아줘서 고마워. 나도 평생 네 곁에서 흔들리지 않게 꽉 잡아줄게." }
       ],
       collageLabel: "현재 · 엥주의 생일",
@@ -614,12 +620,12 @@ const GAME_DATA = {
     {
       id: "montage1_lovers",
       visit: 1,
-      card: { date: "─ 추억의 정원 ─", location: "우리가 연인이 되어가던 시간" },
+      card: { date: "─ 추억의 정원 ─", location: "연인이 되어가던 시간" },
       bgm: "bgm_montage_fast.mp3",
       bgmVolume: 0.32,
       groups: [
         { title: "우리가 연인이 된 겨울", mood: "warm",
-          closing: "그녀에게 점점 빠져 들어갔다.",
+          closing: "엥주에게 스며들어간 날들",
           photos: [
             { date:"2025.01.04", photo:"photo_20250104.jpg", caption:"처음 함께 간 크리스마스 마켓. 소원나무에 조심스럽게 적었던 우리의 미래." },
             { date:"2025.01.08", photo:"photo_20250108.jpg", caption:"“너랑 정식으로 매일매일 만나고 싶어.” 떨렸던 첫 고백." },
@@ -627,35 +633,35 @@ const GAME_DATA = {
             { date:"2025.01.18", photo:"photo_20250118.jpg", caption:"홍대 데이트. 엥주가 그려준 도비 그림까지 남았던 귀여운 하루." },
             { date:"2025.01.23", photo:"photo_20250123.jpg", caption:"사귀자마자 떠난 일본 여행. 박살 난 휴대폰 속에서 엥주 번호를 찾아 헤맸던 날.", fruit:"coconut" }
           ]},
-        { title: "처음 맞은 봄", mood: "soft",
-          closing: "소소한 데이트들과 함께 계절이 바뀌는 동안, 우리도 조금씩 더 가까워졌다.",
+        { title: "우리가 함께한 처음 봄", mood: "soft",
+          closing: "소소한 데이트들과 함께 계절이 바뀌는 동안, \n우리도 조금씩 더 가까워졌다.",
           photos: [
-            { date:"2025.02.07", photo:"photo_20250207.jpg", caption:"구디에서 빙수 먹고 돌아다닌 평범한 데이트. 그런데 그래서 더 좋았던 하루." },
+            { date:"2025.02.07", photo:"photo_20250207.jpg", caption:"구디에서 빙수 먹고 돌아다닌 평범한 데이트. \n그런데 그래서 더 좋았던 하루." },
             { date:"2025.02.15", photo:"photo_20250215.jpg", caption:"국립중앙박물관에서 함께 보낸 우리의 첫 박물관 데이트." },
-            { date:"2025.03.15", photo:"photo_20250315.jpg", caption:"노들섬에서 바라본 한강. 유리창에 비친 우리 그림자까지 남았던 날." },
-            { date:"2025.04.09", photo:"photo_20250409.jpg", caption:"벚꽃보다 엥주가 더 예뻐 보였던 봄날. 내년에도, 그다음 봄에도 같이 보고 싶었다." }
+            { date:"2025.03.15", photo:"photo_20250315.jpg", caption:"노들섬에서 바라본 한강. 유리창에 비친 우리 그림자" },
+            { date:"2025.04.09", photo:"photo_20250409.jpg", caption:"벚꽃보다 엥주가 더 예뻐 보였던 봄날. 내년에도, \n그다음 봄에도 같이 보고 싶었다." }
           ]},
         { title: "함께라서 재밌었던 날들", mood: "fast",
           closing: "특별한 곳이라서가 아니라, 너랑 있어서 재밌었던 날들.",
           photos: [
             { date:"2025.04.18", photo:"photo_20250418.jpg", caption:"우리 둘의 첫 장거리 여행, 전주. 한복도 입고 늦은 밤까지 이야기했던 여행." },
-            { date:"2025.04.24", photo:"photo_20250424.jpg", caption:"한강은 생각보다 너무 추웠다. 잠깐만 누워 있다 들어가자던 웃긴 봄날." },
+            { date:"2025.04.24", photo:"photo_20250424.jpg", caption:"한강은 생각보다 너무 추웠다. \n잠깐만 누워 있다 들어갔던 웃긴 봄날." },
             { date:"2025.04.25", photo:"photo_20250425.jpg", caption:"첫 월미도. 무서워하면서도 도비를 위해 바이킹을 타준 엥주가 고마웠던 날." },
-            { date:"2025.05.03", photo:"photo_20250503.jpg", caption:"한국민속촌을 종일 뛰어다니며 웃었던 봄날. 무서운 곳에서는 오히려 엥주가 내 손을 잡아줬다." },
-            { date:"2025.05.25", photo:"photo_20250525.jpg", caption:"별 기대 없이 갔던 올리브영 페스타. 생각보다 신나게 놀고 잔뜩 받아왔던 하루." }
+            { date:"2025.05.03", photo:"photo_20250503.jpg", caption:"한국민속촌을 종일 뛰어다니며 웃었던 봄날. \n무서운 곳에서는 오히려 엥주가 내 손을 잡아줬다." },
+            { date:"2025.05.25", photo:"photo_20250525.jpg", caption:"별 기대 없이 갔던 올리브영 페스타. \n생각보다 신나게 놀고 잔뜩 받아왔던 하루." }
           ]},
         { title: "서로를 더 알아가던 여름", mood: "calm",
-          closing: "함께하며 서로를 더 알아가고, 더 챙겨주고 싶어졌다.",
+          closing: "이제 확신이 생겼다. \n그녀와 꼭 함께하고싶다고",
           photos: [
-            { date:"2025.06.06", photo:"photo_20250606.jpg", caption:"첫 홍천 여행. 숙소에서 팩도 하고 댐도 보며 둘만의 시간을 보냈다." },
-            { date:"2025.06.14", photo:"photo_20250614.jpg", caption:"론 뮤익 전시를 보러 간 날. 엥주가 갑자기 힘들어해서 정말 놀랐고, 더 잘 챙겨주고 싶다고 생각했다.", hold:true },
+            { date:"2025.06.06", photo:"photo_20250606.jpg", caption:"첫 홍천 여행. 숙소에서 팩도 하고 고기도 구워먹고 설레는 여행" },
+            { date:"2025.06.14", photo:"photo_20250614.jpg", caption:"론 뮤익 전시를 보러 간 날. 엥주가 갑자기 힘들어해서 정말 놀랐고, \n더 잘 챙겨줘야된다고 생각했다", hold:true },
             { date:"2025.06.28", photo:"photo_20250628.jpg", caption:"특별한 계획이 없어도 같이 있으면 좋았던 우리의 여름 데이트." },
             { date:"2025.07.23", photo:"photo_20250723.jpg", caption:"소리 내어 크게 웃으며 행복을 저장했던 개그콘서트." },
             { date:"2025.08.02", photo:"photo_20250802.jpg", caption:"뜨거운 열기 속에서 함께 청춘을 즐겼던 인천 펜타포트 락 페스티벌." }
           ]}
       ],
       /* 4번째 열매까지 보면 → 나무 전체 조명 ON → 카드 → 빛의 길을 따라 탄중아루로 */
-      outro: { card: { date: "2025.10.15", location: "그날, 나는 조금 큰 용기를 냈다." } }
+      outro: { card: { date: "2025.10.15", location: "함께하고 싶은 마음에, 용기를 내본 날" } }
     },
     {
       id: "montage2_family",
@@ -673,7 +679,7 @@ const GAME_DATA = {
             { date:"2025.11.22", photo:"photo_20251122.jpg", caption:"어린이대공원 단풍을 보고, 함께 뮤지컬 ‘레드북’을 봤던 날." }
           ]},
         { title: "다시 돌아온 첫 자리", mood: "soft",
-          closing: "처음 만났던 자리에 다시 앉아 보니, 어느새 함께한 시간이 한 해가 되어 있었다.",
+          closing: "처음 만났던 자리에 다시 앉아 보니, \n어느새 함께한 시간이 한 해가 되어 있었다.",
           photos: [
             { date:"2026.01.08", photo:"photo_20260108.jpg", caption:"우리의 1주년. 처음 만났던 카페, 처음 앉았던 그 자리에 다시 나란히 앉았다." },
             { date:"2026.02.21", photo:"photo_20260221.jpg", caption:"남산에서 남긴 우리의 사진. 1년 전보다 훨씬 자연스러워진 우리." },
@@ -694,8 +700,8 @@ const GAME_DATA = {
         { title: "약속이 현실이 되어가는 중", mood: "calm",
           closing: "그렇게 작은 약속들이 하나씩 우리의 현실이 되어가고 있었다.",
           photos: [
-            { date:"2026.07.11", photo:"photo_20260711.jpg", caption:"서울랜드에서 했던 약속을 기억하고 엥주가 준비해준 두 번째 도시락. 첫 도시락보다 훨씬 커졌다." },
-            { date:"2026.08.16", photo:"photo_20260816.jpg", caption:"다시 찾은 월미도. 무서워하면서도 관람차에 함께 올라 내가 바라던 순간을 만들어준 엥주." },
+            { date:"2026.07.11", photo:"photo_20260711.jpg", caption:"서울랜드에서 했던 약속을 기억하고 엥주가 준비해준 두 번째 도시락. \n첫 도시락보다 훨씬 커졌다." },
+            { date:"2026.08.16", photo:"photo_20260816.jpg", caption:"다시 찾은 월미도. \n무서워하면서도 관람차에 함께 올라 내가 바라던 순간을 만들어준 엥주." },
             { date:"2026.09 현재", photo:"photo_202609.jpg", caption:"그렇게 우리는 지금, 결혼식을 두 달여 앞둔 곳까지 함께 왔다.", hold:true }
           ]}
       ],
@@ -2841,7 +2847,7 @@ function showBundle(group, gi){
     const heroIdx = Math.max(0, photos.findIndex(p=>p.hold));
     const viewer = photoViewer(photos, {captions:true});
     // 배치: 대표 1장(중앙 큼) + 나머지 작은 폴라로이드 (최대 6장)
-    const slots=[[13,20,-7],[87,22,6],[12,80,5],[88,80,-6],[50,8,3],[50,92,-4]];
+    const slots=[[13,20,-7],[87,22,6],[12,80,5],[88,80,-6],[50,12,3],[50,86,-4]];
     const cells=[];
     photos.forEach((ph,i)=>{
       const cell=document.createElement("div");
